@@ -1,0 +1,12 @@
+{
+  "name": "vedaai-assessment-creator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:frontend:window": "scripts\\start-frontend-new-window.bat",
+    "dev:window": "scripts\\start-frontend-new-window.bat"
+  }
+}
