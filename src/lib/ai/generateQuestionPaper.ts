@@ -28,7 +28,9 @@ async function callLlm(system: string, user: string): Promise<string> {
       { role: 'user', content: user },
     ],
     temperature: 0.7,
-    response_format: { type: 'json_object' },
+    ...(aiConfig.useJsonResponseFormat
+      ? { response_format: { type: 'json_object' as const } }
+      : {}),
   });
 
   const raw = completion.choices[0]?.message?.content;

@@ -2,6 +2,7 @@ import type { AssignmentFormData, GeneratedPaper } from '@/types';
 
 export interface AiHealthStatus {
   llmEnabled: boolean;
+  provider?: string;
   model: string;
   visionModel: string;
   hasApiKey: boolean;
