@@ -8,7 +8,7 @@ export default function CreatePage() {
     <div className="flex min-h-0 flex-1 flex-col">
       <AppHeader title="Assignment" showBack backHref="/assignments" />
 
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-6 sm:px-8 sm:py-8">
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-6 pb-8 sm:px-8 sm:py-8">
         <div className="mx-auto w-full max-w-3xl">
           <div className="mb-6">
             <div className="flex items-center gap-2.5">

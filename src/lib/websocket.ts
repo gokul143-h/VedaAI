@@ -1,6 +1,6 @@
-type MessageHandler = (data: Record<string, unknown>) => void;
+import { getWsBaseUrl } from './apiConfig';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000/ws';
+type MessageHandler = (data: Record<string, unknown>) => void;
 
 export class AssessmentWebSocket {
   private ws: WebSocket | null = null;
@@ -12,7 +12,10 @@ export class AssessmentWebSocket {
     this.assignmentId = assignmentId;
     this.cleanup();
 
-    this.ws = new WebSocket(WS_URL);
+    const wsUrl = getWsBaseUrl();
+    if (!wsUrl) return;
+
+    this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
       this.ws?.send(

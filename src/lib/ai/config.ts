@@ -1,10 +1,15 @@
-/** Default Groq models (OpenAI-compatible). Override via env vars. */
-export const DEFAULT_LLM_MODEL = 'llama-3.1-70b-versatile';
-export const DEFAULT_VISION_MODEL = 'llama-3.2-11b-vision-preview';
-export const DEFAULT_LLM_BASE_URL = 'https://api.groq.com/openai/v1';
+/** Meta Llama API (OpenAI-compatible). See https://llama.developer.meta.com */
+export const DEFAULT_META_BASE_URL = 'https://api.llama.com/compat/v1';
+export const DEFAULT_META_LLM_MODEL = 'Llama-3.3-70B-Instruct';
+export const DEFAULT_META_VISION_MODEL = 'Llama-4-Scout-17B-16E-Instruct-FP8';
+
+/** Groq-hosted Llama models (OpenAI-compatible). Override via env vars. */
+export const DEFAULT_GROQ_LLM_MODEL = 'llama-3.1-70b-versatile';
+export const DEFAULT_GROQ_VISION_MODEL = 'llama-3.2-11b-vision-preview';
+export const DEFAULT_GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 export const DEFAULT_OPENWEBUI_BASE_URL = 'http://localhost:8080/api';
 
-export type AiProvider = 'groq' | 'openwebui' | 'openai';
+export type AiProvider = 'meta' | 'groq' | 'openwebui' | 'openai';
 
 const PLACEHOLDER_PATTERNS =
   /^(your_|sk-your|gsk-your|xxx|changeme|placeholder|test_key)/i;
@@ -13,12 +18,14 @@ export function resolveProvider(): AiProvider {
   const explicit = process.env.AI_PROVIDER?.trim().toLowerCase();
   if (explicit === 'openwebui' || explicit === 'open-webui') return 'openwebui';
   if (process.env.OPENWEBUI_BASE_URL?.trim()) return 'openwebui';
+  if (explicit === 'meta' || explicit === 'llama') return 'meta';
+  if (explicit === 'groq') return 'groq';
   if (explicit === 'openai') return 'openai';
-  return 'groq';
+  return 'meta';
 }
 
 /** Reject empty, placeholder, or obviously invalid keys */
-export function isValidApiKey(key: string, provider: AiProvider = 'groq'): boolean {
+export function isValidApiKey(key: string, provider: AiProvider = 'meta'): boolean {
   const k = key.trim();
   if (!k) return false;
   if (PLACEHOLDER_PATTERNS.test(k)) return false;
@@ -32,14 +39,20 @@ export function isValidApiKey(key: string, provider: AiProvider = 'groq'): boole
 }
 
 export function resolveApiKey(provider: AiProvider): string {
-  const raw =
-    (provider === 'openwebui'
-      ? process.env.OPENWEBUI_API_KEY?.trim() ||
-        process.env.OPENAI_API_KEY?.trim()
-      : undefined) ||
-    process.env.GROQ_API_KEY?.trim() ||
-    process.env.OPENAI_API_KEY?.trim() ||
-    '';
+  let raw = '';
+  if (provider === 'meta') {
+    raw = process.env.LLAMA_API_KEY?.trim() || '';
+  } else if (provider === 'openwebui') {
+    raw =
+      process.env.OPENWEBUI_API_KEY?.trim() ||
+      process.env.OPENAI_API_KEY?.trim() ||
+      '';
+  } else {
+    raw =
+      process.env.GROQ_API_KEY?.trim() ||
+      process.env.OPENAI_API_KEY?.trim() ||
+      '';
+  }
 
   return isValidApiKey(raw, provider) ? raw : '';
 }
@@ -58,11 +71,31 @@ export function resolveBaseUrl(provider: AiProvider): string {
     return normalizeOpenWebUiBaseUrl(url);
   }
 
+  if (provider === 'meta') {
+    return (
+      process.env.LLAMA_BASE_URL?.trim() ||
+      process.env.META_LLM_BASE_URL?.trim() ||
+      DEFAULT_META_BASE_URL
+    );
+  }
+
   return (
     process.env.GROQ_BASE_URL?.trim() ||
     process.env.OPENAI_BASE_URL?.trim() ||
-    DEFAULT_LLM_BASE_URL
+    DEFAULT_GROQ_BASE_URL
   );
+}
+
+function resolveDefaultModel(provider: AiProvider): string {
+  if (provider === 'meta') return DEFAULT_META_LLM_MODEL;
+  if (provider === 'groq') return DEFAULT_GROQ_LLM_MODEL;
+  return DEFAULT_META_LLM_MODEL;
+}
+
+function resolveDefaultVisionModel(provider: AiProvider): string {
+  if (provider === 'meta') return DEFAULT_META_VISION_MODEL;
+  if (provider === 'groq') return DEFAULT_GROQ_VISION_MODEL;
+  return DEFAULT_META_VISION_MODEL;
 }
 
 const provider = resolveProvider();
@@ -72,11 +105,11 @@ const baseUrl = resolveBaseUrl(provider);
 export const aiConfig = {
   provider,
   apiKey,
-  model: process.env.OPENAI_MODEL?.trim() || DEFAULT_LLM_MODEL,
+  model: process.env.OPENAI_MODEL?.trim() || resolveDefaultModel(provider),
   visionModel:
     process.env.OPENAI_VISION_MODEL?.trim() ||
     process.env.OPENAI_MODEL?.trim() ||
-    DEFAULT_VISION_MODEL,
+    resolveDefaultVisionModel(provider),
   baseUrl,
   useMock: process.env.USE_MOCK_AI === 'true' || !apiKey,
   useJsonResponseFormat: provider !== 'openwebui',
@@ -105,6 +138,14 @@ export function assertApiKeyConfigured(forVision = false): void {
     );
   }
 
+  if (aiConfig.provider === 'meta') {
+    throw new Error(
+      forVision
+        ? 'Llama API key is required for image uploads. Add LLAMA_API_KEY to .env.local — https://llama.developer.meta.com/'
+        : 'Llama API key is missing. Add LLAMA_API_KEY to .env.local or set USE_MOCK_AI=true for demo mode.'
+    );
+  }
+
   throw new Error(
     forVision
       ? 'Groq API key is required for image uploads. Add GROQ_API_KEY (starts with gsk_) to .env.local — https://console.groq.com/keys'
@@ -122,6 +163,13 @@ export function formatProviderError(err: unknown): string {
         'Or set USE_MOCK_AI=true to generate sample questions without an API key.'
       );
     }
+    if (aiConfig.provider === 'meta') {
+      return (
+        'Invalid Llama API key (401). Create a key at https://llama.developer.meta.com/ ' +
+        'and set LLAMA_API_KEY in .env.local, then restart npm run dev. ' +
+        'Or set USE_MOCK_AI=true to generate sample questions without an API key.'
+      );
+    }
     return (
       'Invalid API key (401). Use a free Groq key (gsk_...) from https://console.groq.com/keys ' +
       'in .env.local as GROQ_API_KEY=..., then restart npm run dev. ' +
@@ -129,14 +177,20 @@ export function formatProviderError(err: unknown): string {
     );
   }
   if (/429|rate limit/i.test(message)) {
-    return aiConfig.provider === 'openwebui'
-      ? 'Open WebUI rate limit reached. Wait a moment and try again.'
-      : 'Groq rate limit reached. Wait a moment and try again.';
+    if (aiConfig.provider === 'openwebui') {
+      return 'Open WebUI rate limit reached. Wait a moment and try again.';
+    }
+    if (aiConfig.provider === 'meta') {
+      return 'Llama API rate limit reached. Wait a moment and try again.';
+    }
+    return 'Groq rate limit reached. Wait a moment and try again.';
   }
   if (/model.*not found|does not exist/i.test(message)) {
-    return (
-      `Model "${aiConfig.model}" was not found. Set OPENAI_MODEL in .env.local to the exact model ID shown in Open WebUI.`
-    );
+    if (aiConfig.provider === 'meta') {
+      return (
+        `Model "${aiConfig.model}" was not found. Set OPENAI_MODEL in .env.local to a Llama model ID from https://llama.developer.meta.com/docs/models/`
+      );
+    }
   }
   return message;
 }

@@ -15,14 +15,15 @@ App: [http://localhost:3000](http://localhost:3000)
 ## Environment (`.env.local`)
 
 ```env
-AI_PROVIDER=openwebui
-OPENWEBUI_BASE_URL=http://localhost:8080/api
-OPENWEBUI_API_KEY=your-key
-OPENAI_MODEL=GPT-5.5
+AI_PROVIDER=meta
+LLAMA_API_KEY=your-key
+OPENAI_MODEL=Llama-3.3-70B-Instruct
 USE_MOCK_AI=false
 ```
 
-For Groq instead of Open WebUI, set `AI_PROVIDER=groq` and `GROQ_API_KEY`.
+Get a free Llama API key at [llama.developer.meta.com](https://llama.developer.meta.com/).
+
+Alternatives: set `AI_PROVIDER=groq` + `GROQ_API_KEY`, or `AI_PROVIDER=openwebui` + `OPENWEBUI_API_KEY`.
 
 ## Scripts
 
@@ -42,11 +43,13 @@ For Groq instead of Open WebUI, set `AI_PROVIDER=groq` and `GROQ_API_KEY`.
 
 | Variable | Value |
 |----------|-------|
-| `AI_PROVIDER` | `openwebui` or `groq` |
-| `OPENWEBUI_BASE_URL` | Your Open WebUI URL + `/api` |
-| `OPENWEBUI_API_KEY` | API key from Open WebUI |
-| `OPENAI_MODEL` | e.g. `GPT-5.5` |
+| `AI_PROVIDER` | `meta` |
+| `LLAMA_API_KEY` | API key from [llama.developer.meta.com](https://llama.developer.meta.com/) |
+| `OPENAI_MODEL` | `Llama-3.3-70B-Instruct` |
+| `OPENAI_VISION_MODEL` | `Llama-4-Scout-17B-16E-Instruct-FP8` |
 | `USE_MOCK_AI` | `false` |
+
+Do **not** set `NEXT_PUBLIC_API_URL` to `localhost` on Vercel — leave it unset so the app uses built-in `/api/ai/generate`. After adding env vars, redeploy the project.
 
 4. Deploy — Vercel auto-detects Next.js
 
@@ -76,7 +79,7 @@ npm start
 VedaAI/
 ├── src/app/          Next.js pages & API routes
 ├── src/components/   UI components
-├── src/lib/ai/       Question generation (Open WebUI / Groq)
+├── src/lib/ai/       Question generation (Meta Llama / Groq / Open WebUI)
 ├── Dockerfile        Container deployment
 └── vercel.json       Vercel config
 ```

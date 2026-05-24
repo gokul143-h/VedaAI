@@ -6,12 +6,12 @@ import type {
   JobStatus,
 } from '@/types';
 import { mapQuestionTypesToBackend } from './questionTypeMap';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getApiBaseUrl, shouldUseExpressBackend } from './apiConfig';
 
 export async function checkBackendHealth(): Promise<boolean> {
+  if (!shouldUseExpressBackend()) return false;
   try {
-    const res = await fetch(`${API_URL}/health`, { cache: 'no-store' });
+    const res = await fetch(`${getApiBaseUrl()}/health`, { cache: 'no-store' });
     if (!res.ok) return false;
     const json = await res.json();
     return json.ready === true;
@@ -23,6 +23,7 @@ export async function checkBackendHealth(): Promise<boolean> {
 export async function createAssignment(
   data: AssignmentFormData
 ): Promise<{ id: string; jobId: string; status: JobStatus }> {
+  const api = getApiBaseUrl();
   const questionConfigs = mapQuestionTypesToBackend(data.questionTypes);
   const totalQuestions = data.questionTypes.reduce((s, q) => s + q.count, 0);
   const totalMarks = data.questionTypes.reduce(
@@ -43,14 +44,14 @@ export async function createAssignment(
     formData.append('totalMarks', String(totalMarks));
     formData.append('referenceFiles', data.file);
 
-    const res = await fetch(`${API_URL}/api/assignments`, {
+    const res = await fetch(`${api}/api/assignments`, {
       method: 'POST',
       body: formData,
     });
     return parseCreateResponse(res);
   }
 
-  const res = await fetch(`${API_URL}/api/assignments`, {
+  const res = await fetch(`${api}/api/assignments`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -85,7 +86,7 @@ async function parseCreateResponse(res: Response) {
 }
 
 export async function listAssignments(): Promise<AssignmentListItem[]> {
-  const res = await fetch(`${API_URL}/api/assignments`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/assignments`, { cache: 'no-store' });
   if (!res.ok) return [];
   const json = await res.json();
   const rows = json.data ?? json;
@@ -101,7 +102,7 @@ export async function listAssignments(): Promise<AssignmentListItem[]> {
 }
 
 export async function getAssignment(id: string): Promise<AssignmentResponse & { paper?: GeneratedPaper }> {
-  const res = await fetch(`${API_URL}/api/assignments/${id}`, { cache: 'no-store' });
+  const res = await fetch(`${getApiBaseUrl()}/api/assignments/${id}`, { cache: 'no-store' });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(json.message || 'Failed to fetch assignment');
@@ -120,7 +121,7 @@ export async function getAssignment(id: string): Promise<AssignmentResponse & { 
 }
 
 export async function getAssignmentStatus(id: string) {
-  const res = await fetch(`${API_URL}/api/assignments/${id}/status`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/assignments/${id}/status`, {
     cache: 'no-store',
   });
   const json = await res.json();
@@ -128,7 +129,7 @@ export async function getAssignmentStatus(id: string) {
 }
 
 export async function regenerateAssignment(id: string, additionalInstructions?: string) {
-  const res = await fetch(`${API_URL}/api/assignments/${id}/regenerate`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/assignments/${id}/regenerate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ additionalInstructions }),
@@ -138,4 +139,4 @@ export async function regenerateAssignment(id: string, additionalInstructions?: 
   return json.data;
 }
 
-export { API_URL };
+export { getApiBaseUrl };

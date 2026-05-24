@@ -58,7 +58,7 @@ export async function generateQuestionPaper(
   } catch (err) {
     if (isAuthError(err)) {
       console.warn(
-        '[AI] Invalid API key — falling back to mock paper. Fix GROQ_API_KEY in .env.local'
+        `[AI] Invalid API key — falling back to mock paper. Fix ${aiConfig.provider === 'meta' ? 'LLAMA_API_KEY' : aiConfig.provider === 'openwebui' ? 'OPENWEBUI_API_KEY' : 'GROQ_API_KEY'} in .env.local`
       );
       await new Promise((r) => setTimeout(r, 500));
       return { ...generateMockPaper(input), usedMockAi: true };

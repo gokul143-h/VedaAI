@@ -12,6 +12,7 @@ import {
 } from '@/lib/assignmentStorage';
 import { savePaper } from '@/lib/paperStorage';
 import { checkBackendHealth, createAssignment, getAssignment } from '@/lib/api';
+import { shouldUseExpressBackend } from '@/lib/apiConfig';
 import { assessmentWs } from '@/lib/websocket';
 import { FileUpload } from './FileUpload';
 import {
@@ -192,7 +193,8 @@ export function AssignmentForm() {
     setErrors({});
 
     try {
-      const backendUp = await checkBackendHealth();
+      const backendUp =
+        shouldUseExpressBackend() && (await checkBackendHealth());
       let result: { id: string; paper: GeneratedPaper };
 
       if (backendUp) {
@@ -364,6 +366,14 @@ export function AssignmentForm() {
           />
         </div>
 
+        {aiStatus?.useMockAi && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            AI key not configured on this server — sample questions will be used.
+            Add <code className="rounded bg-amber-100 px-1">LLAMA_API_KEY</code> in
+            Vercel environment variables for real Llama generation.
+          </div>
+        )}
+
         {errors.submit && (
           <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
             {errors.submit}
@@ -371,7 +381,7 @@ export function AssignmentForm() {
         )}
       </form>
 
-      <div className="flex items-center justify-between gap-4 pb-4">
+      <div className="flex items-center justify-between gap-4 pb-28 lg:pb-4">
         <button
           type="button"
           onClick={() => router.push('/assignments')}

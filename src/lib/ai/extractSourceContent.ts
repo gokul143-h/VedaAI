@@ -13,21 +13,31 @@ function createClient(): OpenAI {
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default;
-  const data = await pdfParse(buffer);
-  return (data.text || '').replace(/\s+/g, ' ').trim();
+  try {
+    const pdfParse = (await import('pdf-parse')).default;
+    const data = await pdfParse(buffer);
+    return (data.text || '').replace(/\s+/g, ' ').trim();
+  } catch (err) {
+    console.warn('[AI] PDF parse failed:', err);
+    return '';
+  }
 }
 
 async function extractImageWithOcr(buffer: Buffer): Promise<string> {
-  const { createWorker } = await import('tesseract.js');
-  const worker = await createWorker('eng');
   try {
-    const {
-      data: { text },
-    } = await worker.recognize(buffer);
-    return (text || '').replace(/\s+/g, ' ').trim();
-  } finally {
-    await worker.terminate();
+    const { createWorker } = await import('tesseract.js');
+    const worker = await createWorker('eng');
+    try {
+      const {
+        data: { text },
+      } = await worker.recognize(buffer);
+      return (text || '').replace(/\s+/g, ' ').trim();
+    } finally {
+      await worker.terminate();
+    }
+  } catch (err) {
+    console.warn('[AI] OCR unavailable (common on Vercel):', err);
+    return '';
   }
 }
 

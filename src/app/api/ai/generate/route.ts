@@ -70,11 +70,16 @@ export async function POST(request: Request) {
           );
         }
         const buffer = Buffer.from(await file.arrayBuffer());
-        sourceText = await extractSourceFromUpload(
-          buffer,
-          file.type || 'application/octet-stream',
-          file.name
-        );
+        try {
+          sourceText = await extractSourceFromUpload(
+            buffer,
+            file.type || 'application/octet-stream',
+            file.name
+          );
+        } catch (extractErr) {
+          console.warn('[AI] File extraction failed, continuing without source:', extractErr);
+          sourceText = `[Uploaded file: ${file.name}. Generate questions from teacher instructions.]`;
+        }
       }
     } else {
       body = (await request.json()) as GenerateBody;
