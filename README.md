@@ -1,49 +1,82 @@
-# VedaAI — AI Assessment Creator (Frontend)
+# VedaAI — AI Assessment Creator
 
-Next.js dashboard for creating assignments, viewing generated question papers, and managing class workflows.
+Next.js app for creating assignments, generating question papers with AI, and managing class workflows.
 
 ## Quick Start
 
-### Frontend
-
 ```bash
-cd frontend
-cp .env.example .env.local
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 App: [http://localhost:3000](http://localhost:3000)
 
-### Windows — new terminal window
+## Environment (`.env.local`)
 
-```bash
-npm run dev:window
+```env
+AI_PROVIDER=openwebui
+OPENWEBUI_BASE_URL=http://localhost:8080/api
+OPENWEBUI_API_KEY=your-key
+OPENAI_MODEL=GPT-5.5
+USE_MOCK_AI=false
 ```
 
-Or double-click `scripts/start-frontend-new-window.bat`.
+For Groq instead of Open WebUI, set `AI_PROVIDER=groq` and `GROQ_API_KEY`.
 
-## Scripts (project root)
+## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start frontend |
-| `npm run dev:window` | Frontend in a new window |
-| `npm install` / `npm run install:all` | Install frontend dependencies |
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm start` | Run production server locally |
 
-## Environment (`frontend/.env.local`)
+## Deploy
 
+### Option 1: Vercel (recommended)
+
+1. Push this repo to GitHub: [https://github.com/gokul143-h/VedaAI](https://github.com/gokul143-h/VedaAI)
+2. Go to [vercel.com/new](https://vercel.com/new) and import the repo
+3. Add environment variables in Vercel → Settings → Environment Variables:
+
+| Variable | Value |
+|----------|-------|
+| `AI_PROVIDER` | `openwebui` or `groq` |
+| `OPENWEBUI_BASE_URL` | Your Open WebUI URL + `/api` |
+| `OPENWEBUI_API_KEY` | API key from Open WebUI |
+| `OPENAI_MODEL` | e.g. `GPT-5.5` |
+| `USE_MOCK_AI` | `false` |
+
+4. Deploy — Vercel auto-detects Next.js
+
+Or from CLI (after `npm i -g vercel` and `vercel login`):
+
+```bash
+vercel --prod
 ```
-NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_WS_URL=ws://localhost:4000/ws
+
+### Option 2: Docker
+
+```bash
+docker build -t vedaai .
+docker run -p 3000:3000 --env-file .env.local vedaai
 ```
 
-Point these at your API server if you run one separately.
+### Option 3: Node.js server
+
+```bash
+npm run build
+npm start
+```
 
 ## Project structure
 
 ```
-vedaAI/
-├── frontend/          Next.js app
-└── scripts/           Windows launchers
+VedaAI/
+├── src/app/          Next.js pages & API routes
+├── src/components/   UI components
+├── src/lib/ai/       Question generation (Open WebUI / Groq)
+├── Dockerfile        Container deployment
+└── vercel.json       Vercel config
 ```
