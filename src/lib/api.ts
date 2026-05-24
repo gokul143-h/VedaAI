@@ -7,9 +7,11 @@ import type {
 } from '@/types';
 import { mapQuestionTypesToBackend } from './questionTypeMap';
 import { getApiBaseUrl, shouldUseExpressBackend } from './apiConfig';
+import { isBackendConfigured } from './runtimeConfig';
 
 export async function checkBackendHealth(): Promise<boolean> {
   if (!shouldUseExpressBackend()) return false;
+  if (!(await isBackendConfigured())) return false;
   try {
     const res = await fetch(`${getApiBaseUrl()}/health`, { cache: 'no-store' });
     if (!res.ok) return false;

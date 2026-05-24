@@ -1,4 +1,4 @@
-import { getWsBaseUrl } from './apiConfig';
+import { getRuntimeConfig } from './runtimeConfig';
 
 type MessageHandler = (data: Record<string, unknown>) => void;
 
@@ -8,11 +8,12 @@ export class AssessmentWebSocket {
   private assignmentId: string | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  connect(assignmentId: string): void {
+  async connect(assignmentId: string): Promise<void> {
     this.assignmentId = assignmentId;
     this.cleanup();
 
-    const wsUrl = getWsBaseUrl();
+    const config = await getRuntimeConfig();
+    const wsUrl = config.wsUrl;
     if (!wsUrl) return;
 
     this.ws = new WebSocket(wsUrl);
@@ -37,7 +38,7 @@ export class AssessmentWebSocket {
     this.ws.onclose = () => {
       if (this.assignmentId) {
         this.reconnectTimer = setTimeout(() => {
-          if (this.assignmentId) this.connect(this.assignmentId);
+          if (this.assignmentId) void this.connect(this.assignmentId);
         }, 3000);
       }
     };

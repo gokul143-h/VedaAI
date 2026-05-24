@@ -35,7 +35,9 @@ Alternatives: set `AI_PROVIDER=groq` + `GROQ_API_KEY`, or `AI_PROVIDER=openwebui
 
 ## Deploy
 
-### Option 1: Vercel (recommended)
+See **[docs/FULL-STACK-DEPLOY.md](docs/FULL-STACK-DEPLOY.md)** for connecting frontend (Vercel) + backend (Render) as one network.
+
+### Option 1: Vercel (frontend)
 
 1. Push this repo to GitHub: [https://github.com/gokul143-h/VedaAI](https://github.com/gokul143-h/VedaAI)
 2. Go to [vercel.com/new](https://vercel.com/new) and import the repo

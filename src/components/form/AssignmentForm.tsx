@@ -54,7 +54,7 @@ function waitForBackendPaper(
       fn();
     };
 
-    assessmentWs.connect(assignmentId);
+    void assessmentWs.connect(assignmentId);
 
     unsub = assessmentWs.onMessage((data) => {
       if (data.type === 'job_progress') {
