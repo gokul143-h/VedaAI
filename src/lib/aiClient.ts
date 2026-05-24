@@ -8,6 +8,8 @@ export interface AiHealthStatus {
   hasApiKey: boolean;
   useMockAi?: boolean;
   baseUrl: string;
+  requiredEnvVar?: string;
+  setupUrl?: string;
 }
 
 export interface GeneratePaperResult {

@@ -31,7 +31,8 @@ function rawKeyForProvider(provider: AiProvider): string {
 }
 
 function firstProviderWithKey(): AiProvider | null {
-  for (const provider of ['meta', 'groq', 'openwebui'] as const) {
+  // Groq first — free Llama hosting, simplest for Vercel production
+  for (const provider of ['groq', 'meta', 'openwebui'] as const) {
     const key = rawKeyForProvider(provider);
     if (isValidApiKey(key, provider)) return provider;
   }
@@ -46,9 +47,12 @@ export function resolveProvider(): AiProvider {
   const fromKey = firstProviderWithKey();
   if (fromKey) return fromKey;
 
-  if (explicit === 'meta' || explicit === 'llama') return 'meta';
+  // Only use explicit provider when a matching key exists (avoid meta without LLAMA_API_KEY)
+  if (explicit === 'meta' || explicit === 'llama') {
+    return isValidApiKey(rawKeyForProvider('meta'), 'meta') ? 'meta' : 'groq';
+  }
   if (explicit === 'groq') return 'groq';
-  if (explicit === 'openai') return 'openai';
+  if (explicit === 'openai') return 'groq';
   return 'groq';
 }
 
@@ -121,6 +125,12 @@ const provider = resolveProvider();
 const apiKey = resolveApiKey(provider);
 const baseUrl = resolveBaseUrl(provider);
 
+function shouldUseMock(): boolean {
+  if (process.env.USE_MOCK_AI === 'true') return true;
+  if (process.env.USE_MOCK_AI === 'false') return !apiKey;
+  return !apiKey;
+}
+
 export const aiConfig = {
   provider,
   apiKey,
@@ -130,11 +140,12 @@ export const aiConfig = {
     process.env.OPENAI_MODEL?.trim() ||
     resolveDefaultVisionModel(provider),
   baseUrl,
-  useMock: process.env.USE_MOCK_AI === 'true' || !apiKey,
+  useMock: shouldUseMock(),
   useJsonResponseFormat: provider !== 'openwebui',
 };
 
 export function getAiHealthInfo() {
+  const requiredEnvVar = getRequiredApiKeyEnvVar(aiConfig.provider);
   return {
     llmEnabled: true,
     provider: aiConfig.provider,
@@ -143,6 +154,11 @@ export function getAiHealthInfo() {
     hasApiKey: Boolean(aiConfig.apiKey),
     useMockAi: aiConfig.useMock,
     baseUrl: aiConfig.baseUrl,
+    requiredEnvVar,
+    setupUrl:
+      aiConfig.provider === 'meta'
+        ? 'https://llama.developer.meta.com/'
+        : 'https://console.groq.com/keys',
   };
 }
 

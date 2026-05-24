@@ -369,9 +369,21 @@ export function AssignmentForm() {
         {aiStatus?.useMockAi && (
           <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             AI key not configured on this server — sample questions will be used.
-            Add <code className="rounded bg-amber-100 px-1">GROQ_API_KEY</code> or{' '}
-            <code className="rounded bg-amber-100 px-1">LLAMA_API_KEY</code> in
-            Vercel environment variables for real question generation.
+            In Vercel → Settings → Environment Variables, add{' '}
+            <code className="rounded bg-amber-100 px-1">
+              {aiStatus.requiredEnvVar || 'GROQ_API_KEY'}
+            </code>
+            , set <code className="rounded bg-amber-100 px-1">USE_MOCK_AI</code> to{' '}
+            <code className="rounded bg-amber-100 px-1">false</code>, then redeploy.
+            {' '}
+            <a
+              href={aiStatus.setupUrl || 'https://console.groq.com/keys'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium underline"
+            >
+              Get a free API key
+            </a>
           </div>
         )}
 
