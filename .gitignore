@@ -8,3 +8,4 @@ dist/
 uploads/
 coverage/
 .vercel
+.env.vercel

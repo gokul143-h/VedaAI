@@ -14,14 +14,42 @@ export type AiProvider = 'meta' | 'groq' | 'openwebui' | 'openai';
 const PLACEHOLDER_PATTERNS =
   /^(your_|sk-your|gsk-your|xxx|changeme|placeholder|test_key)/i;
 
+function rawKeyForProvider(provider: AiProvider): string {
+  if (provider === 'meta') return process.env.LLAMA_API_KEY?.trim() || '';
+  if (provider === 'openwebui') {
+    return (
+      process.env.OPENWEBUI_API_KEY?.trim() ||
+      process.env.OPENAI_API_KEY?.trim() ||
+      ''
+    );
+  }
+  return (
+    process.env.GROQ_API_KEY?.trim() ||
+    process.env.OPENAI_API_KEY?.trim() ||
+    ''
+  );
+}
+
+function firstProviderWithKey(): AiProvider | null {
+  for (const provider of ['meta', 'groq', 'openwebui'] as const) {
+    const key = rawKeyForProvider(provider);
+    if (isValidApiKey(key, provider)) return provider;
+  }
+  return null;
+}
+
 export function resolveProvider(): AiProvider {
   const explicit = process.env.AI_PROVIDER?.trim().toLowerCase();
   if (explicit === 'openwebui' || explicit === 'open-webui') return 'openwebui';
   if (process.env.OPENWEBUI_BASE_URL?.trim()) return 'openwebui';
+
+  const fromKey = firstProviderWithKey();
+  if (fromKey) return fromKey;
+
   if (explicit === 'meta' || explicit === 'llama') return 'meta';
   if (explicit === 'groq') return 'groq';
   if (explicit === 'openai') return 'openai';
-  return 'meta';
+  return 'groq';
 }
 
 /** Reject empty, placeholder, or obviously invalid keys */
@@ -39,22 +67,15 @@ export function isValidApiKey(key: string, provider: AiProvider = 'meta'): boole
 }
 
 export function resolveApiKey(provider: AiProvider): string {
-  let raw = '';
-  if (provider === 'meta') {
-    raw = process.env.LLAMA_API_KEY?.trim() || '';
-  } else if (provider === 'openwebui') {
-    raw =
-      process.env.OPENWEBUI_API_KEY?.trim() ||
-      process.env.OPENAI_API_KEY?.trim() ||
-      '';
-  } else {
-    raw =
-      process.env.GROQ_API_KEY?.trim() ||
-      process.env.OPENAI_API_KEY?.trim() ||
-      '';
-  }
-
+  const raw = rawKeyForProvider(provider);
   return isValidApiKey(raw, provider) ? raw : '';
+}
+
+export function getRequiredApiKeyEnvVar(provider?: AiProvider): string {
+  const p = provider ?? resolveProvider();
+  if (p === 'meta') return 'LLAMA_API_KEY';
+  if (p === 'openwebui') return 'OPENWEBUI_API_KEY';
+  return 'GROQ_API_KEY';
 }
 
 /** Open WebUI serves chat at /api/chat/completions (not /api/v1). */
@@ -88,14 +109,12 @@ export function resolveBaseUrl(provider: AiProvider): string {
 
 function resolveDefaultModel(provider: AiProvider): string {
   if (provider === 'meta') return DEFAULT_META_LLM_MODEL;
-  if (provider === 'groq') return DEFAULT_GROQ_LLM_MODEL;
-  return DEFAULT_META_LLM_MODEL;
+  return DEFAULT_GROQ_LLM_MODEL;
 }
 
 function resolveDefaultVisionModel(provider: AiProvider): string {
   if (provider === 'meta') return DEFAULT_META_VISION_MODEL;
-  if (provider === 'groq') return DEFAULT_GROQ_VISION_MODEL;
-  return DEFAULT_META_VISION_MODEL;
+  return DEFAULT_GROQ_VISION_MODEL;
 }
 
 const provider = resolveProvider();
