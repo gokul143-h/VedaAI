@@ -68,8 +68,32 @@ export const DEFAULT_QUESTION_TYPE_ROWS: QuestionTypeConfig[] = [
   { type: 'fill_blank', count: 5, marksPerQuestion: 5 },
 ];
 
-export function getQuestionTypeDefinition(
-  type: QuestionType
-): QuestionTypeDefinition {
-  return QUESTION_TYPE_CATALOG[type];
+const LEGACY_QUESTION_TYPE_ALIASES: Record<string, QuestionType> = {
+  mcq: 'multiple_choice',
+  short: 'short_answer',
+  short_questions: 'short_answer',
+  long: 'long_answer',
+  long_questions: 'long_answer',
+  diagram_based: 'long_answer',
+  numerical: 'fill_blank',
+  fill_in_the_blank: 'fill_blank',
+  fill_in_the_blanks: 'fill_blank',
+  true_or_false: 'true_false',
+};
+
+function normalizeQuestionType(type: string): QuestionType {
+  const cleaned = type.trim().toLowerCase();
+  if (cleaned in QUESTION_TYPE_CATALOG) {
+    return cleaned as QuestionType;
+  }
+  if (cleaned in LEGACY_QUESTION_TYPE_ALIASES) {
+    return LEGACY_QUESTION_TYPE_ALIASES[cleaned];
+  }
+  throw new Error(
+    `Unsupported question type "${type}". Use one of: ${Object.keys(QUESTION_TYPE_CATALOG).join(', ')}`
+  );
+}
+
+export function getQuestionTypeDefinition(type: string): QuestionTypeDefinition {
+  return QUESTION_TYPE_CATALOG[normalizeQuestionType(type)];
 }
